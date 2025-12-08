@@ -6,7 +6,7 @@ module Calculator(
     input wire [3:0] a, 
     input wire [3:0] b,
     input wire [2:0] op,
-    output reg [3:0] out
+    output reg [7:0] out
 );
 
 //operation will always be A OP B. Ex. A + B, A - B, A * B, A / B
@@ -29,37 +29,38 @@ module Calculator(
     cla_adder ADDER(.A(a),.B(B_adder), .CI(CI), .CO(adder_co), .SUM(SUM));
     combo_mult MULTI(.A(a), .B(b), .res(PRODUCT));
 
-
-    case(op)
-        AND: begin
-            out <= A & B;
-        end
-        OR: begin
-            out <= A | B;
-        end
-        NOT: begin
-            out <= ~A;
-        end
-        XOR: begin
-            out <= A ^ B;
-        end
-        ADD: begin
-            B_adder <= B;
-            CI <= 0;
-            out <= SUM;
-        end
-        SUB: begin
-            B_adder <= ~B;
-            CI <= 1;
-            out <= SUM;
-        end
-        MULT: begin
-            out <= PRODUCT;
-        end
-        DIV: begin
-            out <= a/b;
-        end
-
-    endcase
+    always @(*) begin
+        case(op)
+            AND: begin
+                out <= {4{1'b0}, A&B};
+            end
+            OR: begin
+                out <= {4{1'b0}, A|B};
+            end
+            NOT: begin
+                out <= {4{1'b1}, ~A};
+            end
+            XOR: begin
+                out <= {4{1'b0}, A ^ B};
+            end
+            ADD: begin
+                B_adder <= B;
+                CI <= 0;
+                out <= {3{1'b0}, adder_co, SUM};
+            end
+            SUB: begin
+                B_adder <= ~B;
+                CI <= 1;
+                out <= {3{1'b0}, adder_co, SUM};
+            end
+            MULT: begin
+                out <= PRODUCT;
+            end
+            DIV: begin
+                out <= a/b;
+            end
+    
+        endcase
+   end
 
 endmodule 
