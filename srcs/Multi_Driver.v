@@ -9,9 +9,7 @@ module Multi_Driver(
     );
     
     parameter DELAY = 4095; 
-
     reg [11:0] count = 0; // 12 bit counter 
-
     always @(posedge clk) begin
         if(count < (DELAY / 4)) begin
             an <= 4'b1110;

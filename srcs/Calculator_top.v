@@ -19,19 +19,19 @@ module Calculator_top(
     // Debounced buttons
     wire up_d; wire down_d; wire enter_d; wire back_d; wire rst_d;  
     wire [7:0] calculator_result; // Output from calculator module
-    reg [7:0] calculator_result_r; // Keep calculator result constant until next start press
     reg [31:0] segments; // Value displayed to the seven segment display
     reg convert_value_enable; //Enable signal 
 
     //States for the control unit
     parameter IDLE = 0; //all 0s after reset
-    parameter CONV = 1; //wait for value to bcd
-    parameter RES = 2; //display result
-    parameter OP = 3; //operation menu
+    parameter VALUE_SET = 1;
+    parameter CONV = 2; //wait for value to bcd
+    parameter RES = 3; //display result
+    parameter OP = 4; //operation menu
 
 
-    reg [1:0] cs; //current state
-    reg [1:0] ns; //next state
+    reg [2:0] cs; //current state
+    reg [2:0] ns; //next state
     //Control unit 
     always @(*) begin
         if(rst == 1) begin
@@ -41,12 +41,24 @@ module Calculator_top(
             IDLE: begin
                 segments <= 0; 
                 if(enter_d) begin
-                    value_to_convert <= {4{1'b0}, calculator_result}; 
-                    if(op < 4) begin // logic operation
-
-                    end
-                    ns <= CONV; 
+                    ns <= VALUE_SET;
                 end
+                else if (up_d | down_d) begin
+                    ns <= OP;
+                end
+            end
+            VALUE_SET: begin
+                if(op < 4) begin // logic operation, display binary
+                    value_to_convert <= (1000 * calculator_result[3]) + (100 * calculator_result[2]) + (10 * calculator_result[1]) + (1* calculator_result[0]);
+                end else if(op == 5) begin //Subtraction, check if positive 
+                    if(calculator_result[7]) begin //Sign bit is negative
+                        value_to_convert <= {4{1'b0}, (~calculator_result) + 1}; // Make positive 
+                    end
+                    else value_to_convert <= {{4{1'b0}}, calculator_result}; 
+                end else begin
+                    value_to_convert <= {{4{1'b0}}, calculator_result}; 
+                end
+                ns <= CONV;
             end
             CONV: begin
                 segments <= segValues_op; 
@@ -61,10 +73,24 @@ module Calculator_top(
                 if (back_d) begin
                     ns <= IDLE;
                 end
+                else if (enter_d) begin
+                    ns <= VALUE_SET;
+                end
             end
             OP: begin
                 segments <= segValues_op; 
-                if()
+                if (enter_d) begin
+                    ns <= VALUE_SET;
+                end
+                else if(back_d) begin
+                    ns <= RES;
+                end
+                else if(up_d) begin
+                    op <= op + 1;
+                end
+                else if(down_d) begin
+                    op <= op - 1;
+                end
             end
 
         endcase 
@@ -81,14 +107,14 @@ module Calculator_top(
     end
 
     // Handle op code scrolling 
-    always @ (posedge up_d or posedge down_d) begin
-        if(up_d) begin
-            op <= op + 1; 
-        end
-        else if(down_d) begin
-            op <= op - 1; 
-        end
-    end
+    // always @ (posedge up_d or posedge down_d) begin
+    //     if(up_d) begin
+    //         op <= op + 1; 
+    //     end
+    //     else if(down_d) begin
+    //         op <= op - 1; 
+    //     end
+    // end
 
     //Debounce buttons 
     Debounce dd(.btn(down), .clk(clk), .led(down_d));
@@ -120,7 +146,7 @@ module Calculator_top(
     genvar i;
     generate 
         for(i = 0; i < 4; i = i + 1) begin
-            bcd_seg x(.BCD(calc_result_bcd[3 + 4 * i:4 * i]), .BCD(segValues_res[8 * i + 1 : 8 * i])); 
+            bcd_seg x(.sw(calc_result_bcd[3 + 4 * i:4 * i]), segValues_res[8 * i + 1 : 8 * i]); 
         end
     endgenerate
 

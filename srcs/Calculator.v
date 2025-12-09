@@ -25,33 +25,34 @@ module Calculator(
     wire [7:0] PRODUCT;
     wire [3:0] B_adder;
     wire CI;
-
+    
+    assign B_adder = (op == ADD) ? b : 
+                     (op == SUB) ? ~b :
+                     0; 
+    assign CI = (op == SUB) ? 1 : 0; 
+    
     cla_adder ADDER(.A(a),.B(B_adder), .CI(CI), .CO(adder_co), .SUM(SUM));
-    combo_mult MULTI(.A(a), .B(b), .res(PRODUCT));
+    combo_mult MULTI(.a(a), .b(b), .res(PRODUCT));
 
     always @(*) begin
         case(op)
             AND: begin
-                out <= {4{1'b0}, A&B};
+                out <= {{4{1'b0}}, a&b};
             end
             OR: begin
-                out <= {4{1'b0}, A|B};
+                out <= {{4{1'b0}}, a|b};
             end
             NOT: begin
-                out <= {4{1'b1}, ~A};
+                out <= {{4{1'b1}}, ~a};
             end
             XOR: begin
-                out <= {4{1'b0}, A ^ B};
+                out <= {{4{1'b0}}, a ^ b};
             end
             ADD: begin
-                B_adder <= B;
-                CI <= 0;
-                out <= {3{1'b0}, adder_co, SUM};
+                out <= {{3{1'b0}}, adder_co, SUM};
             end
             SUB: begin
-                B_adder <= ~B;
-                CI <= 1;
-                out <= {3{1'b0}, adder_co, SUM};
+                out <= {{4{adder_co}}, SUM};
             end
             MULT: begin
                 out <= PRODUCT;
