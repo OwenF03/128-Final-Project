@@ -22,7 +22,7 @@ module bcd_seg(
             8: s = 8'b0000_0001;
             9: s = 8'b0000_1001;
             10: s = 8'b1111_1101; 
-            default s = 8'b0000_0000;
+            default s = 8'b1111_1111;
         endcase
 end
 

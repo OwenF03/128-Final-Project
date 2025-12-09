@@ -1,7 +1,7 @@
 `timescale 1ns / 1ps
 `default_nettype none
 
-module Calculator_top(
+module Calculator_top_testing(
     input wire [3:0] a, 
     input wire [3:0] b,
     input wire clk, 
@@ -17,7 +17,7 @@ module Calculator_top(
     reg [2:0] op = 3'b0; 
     wire [7:0] calculator_result; // Output from calculator module
     reg [31:0] display_value; // Value displayed to the seven segment display
-    reg convert_value_enable; //Enable signal 
+    // reg convert_value_enable; //Enable signal 
 
     /*------------------BUTTON INPUT------------------*/
     //Debounce buttons 
@@ -37,7 +37,7 @@ module Calculator_top(
     reg [11:0] value_to_convert; 
     wire bcd_val_rdy; 
 
-    val_bcd VAL(.clk(clk), .reset(rst_d), .en(convert_value_enable), .count(value_to_convert), .rdy(bcd_val_rdy), .BCD(BCD_result));
+    val_bcd VAL(.clk(clk), .reset(rst_d), .en(1), .count(value_to_convert), .rdy(bcd_val_rdy), .BCD(BCD_result));
 
     //Generate the display_value from calc-->BCD
     wire [31:0] BCD_seg;
@@ -80,9 +80,10 @@ module Calculator_top(
         else begin
             value_to_convert <= {{4{1'b0}}, calculator_result}; 
         end
+
         if(rst_d == 1) begin
             op <= 0; 
-            convert_value_enable <= 0; 
+            // convert_value_enable <= 0; 
             ns <= IDLE;
             display_value <= DISP_ZEROS;
         end
@@ -91,7 +92,7 @@ module Calculator_top(
                 IDLE: begin
                     display_value <= DISP_ZEROS; 
                     op <= 0;
-                    if(ENTER) begin
+                    if(enter_d) begin
                         ns <= CONV;
                     end
                     else if (UP | DOWN) begin
@@ -102,28 +103,15 @@ module Calculator_top(
 
 
                 // VALUE_SET: begin
-                //     if(op < 4) begin // logic operation, display binary
-                //         value_to_convert <= (1000 * calculator_result[3]) + (100 * calculator_result[2]) + (10 * calculator_result[1]) + (1* calculator_result[0]);
-                //     end 
-                //     else if(op == 5) begin //Subtraction, check if positive 
-                //         if(calculator_result[7]) begin //Sign bit is negative
-                //             value_to_convert <= {{4{1'b0}}, (~calculator_result) + 1}; // Make positive 
-                //         end
-                //         else value_to_convert <= {{4{1'b0}}, calculator_result}; 
-                //     end 
-                //     else begin
-                //         value_to_convert <= {{4{1'b0}}, calculator_result}; 
-                //     end
-                //     ns <= CONV;
                 // end
 
 
                 CONV: begin
                     display_value <= op_seg; 
-                    convert_value_enable <= 1; 
+                    // convert_value_enable <= 1; 
                     if(bcd_val_rdy) begin
                         ns <= RES;
-                        convert_value_enable <= 0;
+                        // convert_value_enable <= 0;
                         BCD_seg_buffer <= BCD_seg;
                     end
                     else ns <= CONV; 
@@ -133,7 +121,7 @@ module Calculator_top(
                     if (BACK) begin
                         ns <= IDLE;
                     end
-                    else if (ENTER) begin
+                    else if (enter_d) begin
                         ns <= CONV;
                     end
                     else if (UP | DOWN) begin
@@ -144,7 +132,7 @@ module Calculator_top(
                 end
                 OP: begin
                     display_value <= op_seg; 
-                    if (ENTER) begin
+                    if (enter_d) begin
                         ns <= CONV;
                     end
                     else if(BACK) begin
@@ -166,13 +154,10 @@ module Calculator_top(
 
     end
 
-    wire DOWN; wire UP; wire BACK; wire ENTER;
+    wire DOWN; wire UP; wire BACK; 
     edge_generator de(.clk(clk), .rst(rst_d), .signal(down_d), .out(DOWN));
     edge_generator ue(.clk(clk), .rst(rst_d), .signal(back_d), .out(BACK));
     edge_generator be(.clk(clk), .rst(rst_d), .signal(up_d), .out(UP));
-    edge_generator ee(.clk(clk), .rst(rst_d), .signal(enter_d), .out(ENTER));
-
-    
 
     always @(negedge clk) begin
         if(rst_d) begin

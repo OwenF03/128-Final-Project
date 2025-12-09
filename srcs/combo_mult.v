@@ -6,7 +6,6 @@ module combo_mult(input wire [3:0] a, input wire [3:0] b, output wire [7:0] res)
     
     
     wire [7:0] m [3:0];
-    wire [7:0] sums [3:0];
      
     genvar i; 
     generate 

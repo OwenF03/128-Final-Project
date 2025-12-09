@@ -7,7 +7,7 @@ module Debounce(
     output reg led
     );
     
-    reg [2:0] counter; //3 bit counter
+    reg [15:0] counter; //8 bit counter
     wire TC; //store if signal from button stable
     
     always @(posedge clk) begin
@@ -19,7 +19,7 @@ module Debounce(
         end
     end
     
-    assign TC = (counter == 7); //Counter is at max value
+    assign TC = (counter == 65534); //Counter is at max value
     
     //Assign system output
     always @(posedge clk) begin
