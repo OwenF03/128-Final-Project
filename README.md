@@ -1,6 +1,6 @@
 # 128-Final-Project
 
-# Owen Funk, David Riley, Sophia Pham
+**Owen Funk, David Riley, Sophia Pham**
 
 ## Description
 
@@ -8,7 +8,7 @@ Design and test an 8 function calculator, outputting the operation and result to
 
 ## Instructions to run
 
-Download all of the provided files and create a new project using AMD Vivado 2023.1, and select the Xilinx Artic-7 FPGA (XC7A35T-ICPG236C) as the board. Add the module files (all .v files that don't end in tb) as design sources, the .xdc file as constratint sources, and the .v files that end with tb as simulation sources. The specific sources for each problem are listed below. 
+Download all of the provided files and create a new project using AMD Vivado 2023.1, and select the Xilinx Artic-7 FPGA (XC7A35T-ICPG236C) as the board. Add the module files (all .v files that don't end in tb) as design sources, the .xdc file as constratint sources, and the .v files that end with tb as simulation sources. The specific sources for each problem are listed below. Set Calculator_top.v as top in Vivado.
 
 # File Breakdown
 
