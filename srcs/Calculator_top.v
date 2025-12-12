@@ -11,7 +11,8 @@ module Calculator_top(
     input wire up, 
     input wire down,
     output wire [3:0] an, 
-    output wire [7:0] seg
+    output wire [7:0] seg,
+    output reg bin_ind
 );
 
     reg [2:0] op = 3'b0; 
@@ -63,6 +64,7 @@ module Calculator_top(
     parameter RES = 3; //display result
     parameter OP = 4; //operation menu
 
+    reg [1:0] result_neg; 
 
     reg [2:0] cs; //current state
     reg [2:0] ns; //next state
@@ -70,13 +72,18 @@ module Calculator_top(
     always @(posedge clk) begin
         if(op < 4) begin // logic operation, display binary
             value_to_convert <= (1000 * calculator_result[3]) + (100 * calculator_result[2]) + (10 * calculator_result[1]) + (calculator_result[0]);
+            
         end 
-        // else if(op == 5) begin //Subtraction, check if positive 
-        //     if(calculator_result[7]) begin //Sign bit is negative
-        //         value_to_convert <= {{4{1'b0}}, (~calculator_result) + 1}; // Make positive 
-        //     end
-        //     else value_to_convert <= {{4{1'b0}}, calculator_result}; 
-        // end 
+        else if(op == 5) begin //Subtraction, check if positive 
+             if(calculator_result[7]) begin //Sign bit is negative
+                 result_neg[0] <= 1; 
+
+                 value_to_convert <= {{8{1'b0}}, ((~calculator_result) + 1) & 4'b1111}; // Make positive 
+                 if((((~calculator_result) + 1) & 4'b1111) >= 10) result_neg[1] <= 1;
+                 else result_neg[1] <= 0; 
+             end
+             else value_to_convert <= {{4{1'b0}}, calculator_result}; 
+        end 
         else begin
             value_to_convert <= {{4{1'b0}}, calculator_result}; 
         end
@@ -84,6 +91,7 @@ module Calculator_top(
             op <= 0; 
             convert_value_enable <= 0; 
             ns <= IDLE;
+            result_neg <= 0;
             display_value <= DISP_ZEROS;
         end
         else begin
@@ -119,16 +127,31 @@ module Calculator_top(
 
 
                 CONV: begin
+                    if(op >= 5) begin
+                        bin_ind <= 0; 
+                    end else begin
+                        bin_ind <= 1; 
+                    end
                     display_value <= op_seg; 
                     convert_value_enable <= 1; 
                     if(bcd_val_rdy) begin
                         ns <= RES;
                         convert_value_enable <= 0;
-                        BCD_seg_buffer <= BCD_seg;
+                        if(result_neg[0]) begin //Negative value, insert - sign on third display
+                            if(result_neg[1]) begin
+                                BCD_seg_buffer <= {16'b1111_1111_1111_1101, BCD_seg[15:0]}; //Extract last two converted segment values, insert negative sign
+                            end else begin
+                                BCD_seg_buffer <= {24'b1111_1111_1111_1111_1111_1101, BCD_seg[7:0]}; //Extract last two converted segment values, insert negative sign
+                            end
+                            result_neg <= 2'b0; 
+                        end else begin
+                            BCD_seg_buffer <= BCD_seg;
+                        end
                     end
                     else ns <= CONV; 
                 end
                 RES: begin
+                    result_neg <= 2'b0;
                     display_value <= BCD_seg_buffer; 
                     if (BACK) begin
                         ns <= IDLE;
@@ -143,6 +166,7 @@ module Calculator_top(
                     else ns <= RES;
                 end
                 OP: begin
+                    result_neg <= 2'b0;
                     display_value <= op_seg; 
                     if (ENTER) begin
                         ns <= CONV;

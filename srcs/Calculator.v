@@ -52,13 +52,10 @@ module Calculator(
                 out <= {{3{1'b0}}, adder_co, SUM};
             end
             SUB: begin
-                /*
-                if (b == 0) begin
-                    out <= {{4{1'b0}}, SUM};
+                if (a < b) begin
+                    out <= {{4{1'b1}}, SUM};
                 end
-                else out <= {{4{adder_co}}, SUM};
-                */
-                out <= {{4{adder_co}}, SUM};
+                else out <= {{4{1'b0}}, SUM};
             end
             MULT: begin
                 out <= PRODUCT;
